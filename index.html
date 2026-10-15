@@ -26,6 +26,7 @@ padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(
 .intro input{font-size:1.1rem;font-weight:700;letter-spacing:.5px;width:100%;margin-top:4px;padding:10px;border:1px solid var(--fieldbd);border-radius:9px;background:var(--field);color:var(--ink);font-family:inherit}
 .intro label{display:block;font-size:.88rem;font-weight:600;color:var(--ink)}
 .intro .dest{margin:6px 0 0;font-size:.85rem;color:var(--ink2)}
+.authbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:.85rem;color:var(--ink2)}
 fieldset{background:var(--panel);border:1px solid var(--bdl);border-radius:14px;margin:14px 0;padding:14px 16px 6px;box-shadow:0 2px 12px rgba(0,0,0,.25);overflow:hidden}
 .sh{display:block;margin:-14px -16px 16px;padding:14px 18px;background:linear-gradient(90deg,#052a12 0%,#0d6b2a 60%,#1f9e47 100%);color:#ffffff;font-family:Montserrat,system-ui,sans-serif;font-weight:800;font-size:1.1rem;line-height:1.3;letter-spacing:.8px;text-transform:uppercase;border-bottom:3px solid #3ef07a}
 label{display:block;font-size:.88rem;font-weight:600;margin:0 0 12px;color:var(--ink)}
@@ -50,7 +51,7 @@ background:linear-gradient(90deg,#c9d3d9 0%,#3ef07a 35%,#0d7a33 60%,#3ef07a 80%,
 #gbtn{display:block;width:100%;border-radius:999px;padding:16px 24px;cursor:pointer;font:inherit;font-weight:800;font-size:1.05rem;letter-spacing:3px;color:#ffffff;border:0;background:linear-gradient(90deg,#052a12,#0d6b2a 55%,#1f9e47);box-shadow:0 6px 18px rgba(0,0,0,.35)}
 #gbtn:hover{filter:brightness(1.12)}
 #pend{margin:8px 0}
-#pend[hidden],#sent[hidden],#guard[hidden]{display:none}
+#pend[hidden],#sent[hidden],#guard[hidden],#app[hidden],#login[hidden]{display:none}
 #pend .err{background:#fff5f3;border:2px solid var(--er);border-radius:12px;padding:12px 14px;color:#7a1f14;font-size:.92rem}
 #pend .err ul{margin:6px 0 0;padding-left:20px}
 #sent{margin:12px 0;background:#ffffff;border:2px solid var(--head);border-radius:14px;padding:14px 16px}
@@ -73,7 +74,8 @@ pre{background:var(--field);border:1px solid var(--fieldbd);border-radius:10px;p
 pre.ficha{display:none}
 pre.ficha.open{display:block}
 .note{font-size:.88rem;color:var(--ink2)}
-#gmsg,#smsg{font-weight:600;color:var(--ok);min-height:1.4em;margin-top:6px}
+#gmsg,#smsg,#lmsg{font-weight:600;color:var(--ok);min-height:1.4em;margin-top:6px}
+#lmsg{color:var(--er)}
 </style>
 </head>
 <body>
@@ -86,7 +88,23 @@ pre.ficha.open{display:block}
 <label for="notif">Celu que recibirá la notificación por WhatsApp de la TDE generada</label>
 <input type="tel" id="notif" value="+5493425040582" inputmode="tel" autocomplete="off">
 <p class="dest">La notificación se envía por WhatsApp a este número al tocar GENERAR.</p>
+<div class="authbar" id="authbar">
+<span id="who"></span>
+<button type="button" id="logout" class="btn sec" hidden>Cerrar sesión</button>
+</div>
 </section>
+
+<fieldset id="login">
+<div class="sh">Ingreso del equipo</div>
+<label>Correo
+<input type="email" id="lemail" autocomplete="username"></label>
+<label>Contraseña
+<input type="password" id="lpass" autocomplete="current-password"></label>
+<button type="button" id="lbtn" class="btn">INGRESAR</button>
+<p id="lmsg" role="status"></p>
+</fieldset>
+
+<div id="app" hidden>
 
 <form id="f" onsubmit="return false">
 
@@ -215,13 +233,18 @@ pre.ficha.open{display:block}
 <button type="button" id="fulld" class="btn">FULL DATA (ZIP)</button>
 <button type="button" id="clr" class="btn danger">LIMPIAR BD</button>
 </div>
-<p class="note">FULL DATA descarga en un ZIP todas las TDE guardadas, con sus archivos. Descargalo antes de LIMPIAR BD.</p>
+<p class="note">FULL DATA descarga en un ZIP todas las TDE guardadas por el equipo, con sus archivos. Descargalo antes de LIMPIAR BD.</p>
 <div id="gmsg" role="status"></div>
 </section>
 
+</div>
+
 </main>
 <script>
-// ---- CONFIGURACIÓN DEL ESTUDIO (editar si cambia) ----
+// ---- CONFIGURACIÓN ----
+var SB_URL="https://nhrmybezferegzetkttw.supabase.co";
+var SB_KEY="sb_publishable_dRAeO1MgXXvDAudV1ASEZw_-IrdVpxi";
+var BUCKET="tde-archivos";
 var WA="5492616518318";
 var PLINFO={
  "Estándar":"Botones: WhatsApp, Llamar, Cómo llegar y Sitio Web · Redes: Instagram, Facebook y LinkedIn.",
@@ -238,30 +261,62 @@ function money(n){return "$ "+n.toLocaleString("es-AR",{minimumFractionDigits:2,
 function names(id){return [].slice.call($(id).files||[]).map(function(x){return x.name})}
 function notifDigits(){return $("notif").value.replace(/\D/g,"")}
 function locVal(){return $("loc").hidden?v("locT"):($("loc").value||"").trim()}
+function safe(n){return n.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9._-]+/g,"_")}
+function slug(s){return (s||"cliente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"cliente"}
 
-// ---- Almacenamiento: TDE DATOS (IndexedDB en este navegador) ----
-var state={dirty:false};
-try{state.dirty=localStorage.getItem("tde_dirty")==="1"}catch(e){}
-function setDirty(x){state.dirty=x;try{localStorage.setItem("tde_dirty",x?"1":"0")}catch(e){}}
-function dbOpen(){return new Promise(function(res,rej){
- if(!window.indexedDB){rej(new Error("este navegador no permite guardar datos"));return}
- var r=indexedDB.open("TDE_DATOS",1);
- r.onupgradeneeded=function(){r.result.createObjectStore("tde",{keyPath:"id"})};
- r.onsuccess=function(){res(r.result)};
- r.onerror=function(){rej(r.error)}})}
-function dbTx(mode,fn){return dbOpen().then(function(db){return new Promise(function(res,rej){
- var tx=db.transaction("tde",mode),st=tx.objectStore("tde"),req=fn(st);
- tx.oncomplete=function(){db.close();res(req?req.result:undefined)};
- tx.onerror=function(){db.close();rej(tx.error)};
- tx.onabort=function(){db.close();rej(tx.error)}})})}
-function dbAll(){return dbTx("readonly",function(st){return st.getAll()})}
-function dbPut(rec){return dbTx("readwrite",function(st){return st.put(rec)})}
-function dbClear(){return dbTx("readwrite",function(st){return st.clear()})}
+// ---- Sesión del equipo (Supabase Auth) ----
+var SESS_KEY="tde_session";
+function getSess(){try{return JSON.parse(localStorage.getItem(SESS_KEY)||"null")}catch(e){return null}}
+function setSess(s){try{if(s)localStorage.setItem(SESS_KEY,JSON.stringify(s));else localStorage.removeItem(SESS_KEY)}catch(e){}}
+function saveTokens(j){return {access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()+(j.expires_in||3600)*1000,email:(j.user&&j.user.email)||""}}
+function login(email,pass){
+ return fetch(SB_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json"},body:JSON.stringify({email:email,password:pass})})
+  .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error_description||j.msg||"Correo o contraseña incorrectos");return j})})
+  .then(function(j){var s=saveTokens(j);setSess(s);return s})}
+function refreshSess(s){
+ return fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})})
+  .then(function(r){if(!r.ok)throw new Error("La sesión venció. Ingresá otra vez.");return r.json()})
+  .then(function(j){var n=saveTokens(j);setSess(n);return n})}
+function token(){
+ var s=getSess();
+ if(!s)return Promise.reject(new Error("Ingresá con tu usuario del equipo."));
+ if(s.expires_at-Date.now()>60000)return Promise.resolve(s.access_token);
+ return refreshSess(s).then(function(n){return n.access_token},function(e){setSess(null);showApp();throw e})}
+function api(path,opts){
+ opts=opts||{};
+ return token().then(function(t){
+  var h=Object.assign({apikey:SB_KEY,Authorization:"Bearer "+t},opts.headers||{});
+  return fetch(SB_URL+path,Object.assign({},opts,{headers:h})).then(function(r){
+   if(!r.ok)return r.text().then(function(tx){throw new Error("Error "+r.status+": "+tx)});
+   return r})})}
+
+function showApp(){
+ var s=getSess(),on=!!s;
+ $("login").hidden=on;$("app").hidden=!on;$("logout").hidden=!on;
+ $("who").textContent=on?"Sesión: "+s.email:"";
+ if(on)refreshList();}
+
+$("lbtn").onclick=function(){
+ var e=v("lemail"),p=$("lpass").value;
+ if(!e||!p){$("lmsg").textContent="Ingresá correo y contraseña.";return}
+ $("lmsg").textContent="Ingresando…";
+ login(e,p).then(function(){$("lpass").value="";$("lmsg").textContent="";showApp()},
+  function(err){$("lmsg").textContent=err.message||"No se pudo ingresar"})};
+$("logout").onclick=function(){setSess(null);showApp()};
+
+// ---- Datos y archivos en Supabase ----
+function dbList(){return api("/rest/v1/tde_registros?select=*&order=creado_en.desc").then(function(r){return r.json()})}
+function uploadFile(path,f){return api("/storage/v1/object/"+BUCKET+"/"+path,{method:"POST",headers:{"Content-Type":f.type||"application/octet-stream","x-upsert":"false"},body:f})}
+function downloadFile(path){return api("/storage/v1/object/"+BUCKET+"/"+path).then(function(r){return r.blob()})}
+function insertRow(row){return api("/rest/v1/tde_registros",{method:"POST",headers:{"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify(row)})}
+function removeFiles(paths){
+ if(!paths.length)return Promise.resolve();
+ return api("/storage/v1/object/"+BUCKET,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({prefixes:paths})})}
+function deleteRows(){return api("/rest/v1/tde_registros?id=not.is.null",{method:"DELETE",headers:{Prefer:"return=minimal"}})}
 
 // ---- Formulario ----
 $("plan").onchange=function(){var p=v("plan");$("pinfo").textContent=p?"Plan "+p+": "+PLINFO[p]:""};
 
-// Provincia -> localidades de esa provincia (API pública de Georef, Argentina).
 var locToken=0;
 function resetLoc(msg){
  $("loc").hidden=false;$("locT").hidden=true;$("locT").value="";
@@ -316,7 +371,6 @@ function checkDir(){var d=v("dir");if(!d){setFl("fl_dir","");return true}
  setFl("fl_dir","");return true}
 $("dir").onblur=checkDir;
 
-// Faltantes: [etiqueta, id del elemento a marcar]
 function miss(){
  var m=[];
  [["persona","Nombre y apellido"],["cel","Celular"],["mail","E-mail"],["dir","Dirección"],["pais","País"],["fantasia","Nombre de fantasía"],["rubro","Rubro"]].forEach(function(p){
@@ -365,20 +419,40 @@ function build(){
  sec("7. OBSERVACIONES",sRows);
  return L.join("\n")}
 
+// Sube los archivos al bucket y guarda la fila en tde_registros
 function saveRecord(ficha){
- var rec={id:Date.now()+"-"+Math.random().toString(36).slice(2,7),
-  fecha:new Date().toISOString(),
-  fantasia:v("fantasia"),persona:v("persona"),plan:v("plan"),
-  datos:collect(),ficha:ficha,
-  logo:files.logo||null,foto:files.foto||null,
-  pres:[].slice.call($("pres_f").files),cat:[].slice.call($("cat_f").files)};
- return dbPut(rec).then(function(){setDirty(true);return rec})}
+ var id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2));
+ var base=id+"/";
+ var arch={logo:null,foto:null,presentacion:[],catalogo:[]};
+ var ups=[];
+ if(files.logo){var rl=base+"logo_"+safe(files.logo.name);arch.logo={nombre:files.logo.name,ruta:rl};ups.push([rl,files.logo])}
+ if(files.foto){var rf=base+"foto_"+safe(files.foto.name);arch.foto={nombre:files.foto.name,ruta:rf};ups.push([rf,files.foto])}
+ [].forEach.call($("pres_f").files,function(f){var r=base+"presentacion_"+safe(f.name);arch.presentacion.push({nombre:f.name,ruta:r});ups.push([r,f])});
+ [].forEach.call($("cat_f").files,function(f){var r=base+"catalogo_"+safe(f.name);arch.catalogo.push({nombre:f.name,ruta:r});ups.push([r,f])});
+ return ups.reduce(function(p,u){return p.then(function(){return uploadFile(u[0],u[1])})},Promise.resolve())
+  .then(function(){return insertRow({id:id,fantasia:v("fantasia"),persona:v("persona"),plan:v("plan"),datos:collect(),ficha:ficha,archivos:arch})})
+  .then(function(){return pruneOld(MAX_TDE)})
+  .then(function(){setDirty(true);return id})}
+
+// Mantiene solo las MAX_TDE más nuevas: borra archivos y filas de las más viejas
+var MAX_TDE=3;
+function pruneOld(keep){
+ return dbList().then(function(recs){
+  var old=recs.slice(keep);
+  if(!old.length)return;
+  var paths=[];
+  old.forEach(function(r){fileList(r).forEach(function(x){paths.push(x[1])})});
+  var ids=old.map(function(r){return r.id}).join(",");
+  return removeFiles(paths).then(function(){
+   return api("/rest/v1/tde_registros?id=in.("+ids+")",{method:"DELETE",headers:{Prefer:"return=minimal"}})});
+ });
+}
 
 function markMissing(list){
  document.querySelectorAll(".miss").forEach(function(e){e.classList.remove("miss")});
  list.forEach(function(x){var e=$(x[1]);if(e)e.classList.add("miss")})}
 
-// ---- GENERAR: notifica por WhatsApp y guarda la TDE en TDE DATOS ----
+// ---- GENERAR ----
 $("go").onclick=function(){
  var box=$("pend"),m=miss();
  if(m.length){
@@ -397,65 +471,66 @@ $("go").onclick=function(){
  var w=null;try{w=window.open(url,"_blank")}catch(e){w=null}
 
  var sent=$("sent");sent.hidden=false;
- $("sent_txt").textContent="Notificación para "+dest+". TDE guardada en TDE DATOS: podés verla abajo en TDE GUARDADA.";
+ $("sent_txt").textContent="Notificación para "+dest+". Guardando la TDE en la base del equipo…";
  var a=$("wlink");a.href=url;a.textContent="Enviar notificación por WhatsApp a "+dest;
  $("smsg").textContent=w?"Se abrió WhatsApp con la notificación. Tocá Enviar para confirmar.":"Si no se abrió WhatsApp, tocá el botón verde para enviar la notificación.";
  sent.scrollIntoView({behavior:"smooth",block:"center"});
 
- var ficha=build();
- saveRecord(ficha).then(function(){
-  $("smsg").textContent+=" La TDE quedó guardada en este navegador.";
+ saveRecord(build()).then(function(){
+  $("sent_txt").textContent="Notificación para "+dest+". La TDE quedó guardada en la base del equipo: podés verla en TDE GUARDADA. Se conservan las últimas "+MAX_TDE+" TDE; las más viejas se eliminan automáticamente.";
   refreshList();
  },function(e){
-  $("smsg").textContent="No se pudo guardar la TDE en este navegador: "+(e&&e.message?e.message:e);
+  $("sent_txt").textContent="La notificación está lista, pero la TDE NO se guardó en la base: "+(e&&e.message?e.message:e);
  });
 };
 
 // ---- TDE GUARDADA ----
+var lastRecs=[];
 function gsay(t){$("gmsg").textContent=t}
-function slug(s){return (s||"cliente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"cliente"}
-
 function refreshList(){
- return dbAll().then(function(recs){
-  recs.sort(function(a,b){return a.fecha<b.fecha?1:-1});
-  $("gcount").textContent=recs.length?(recs.length+(recs.length===1?" TDE guardada":" TDE guardadas")+" en TDE DATOS"):"No hay TDE guardadas todavía.";
+ return dbList().then(function(recs){
+  lastRecs=recs;
+  $("gcount").textContent=recs.length?(recs.length+(recs.length===1?" TDE guardada":" TDE guardadas")+" en la base del equipo"):"No hay TDE guardadas todavía.";
   var list=$("glist");list.innerHTML="";
   recs.forEach(function(r){
    var d=document.createElement("div");d.className="item";
    var b=document.createElement("b");b.textContent=r.fantasia||r.persona||"Sin nombre";
-   var s=document.createElement("small");s.textContent=new Date(r.fecha).toLocaleString("es-AR")+" · Plan "+r.plan;
+   var s=document.createElement("small");s.textContent=new Date(r.creado_en).toLocaleString("es-AR")+" · Plan "+r.plan;
    var btn=document.createElement("button");btn.type="button";btn.className="btn sec";btn.textContent="Ver ficha";
-   var pre=document.createElement("pre");pre.className="ficha";pre.textContent=r.ficha;
+   var pre=document.createElement("pre");pre.className="ficha";pre.textContent=r.ficha||"";
    btn.onclick=function(){pre.classList.toggle("open");btn.textContent=pre.classList.contains("open")?"Ocultar ficha":"Ver ficha"};
    d.appendChild(b);d.appendChild(s);d.appendChild(btn);d.appendChild(pre);list.appendChild(d)});
- }).catch(function(e){$("gcount").textContent="No se pudo leer TDE DATOS en este navegador."})}
+ }).catch(function(e){$("gcount").textContent="No se pudo leer la base: "+(e&&e.message?e.message:e)})}
 
 $("gbtn").onclick=function(){
  var g=$("guard");g.hidden=!g.hidden;
  if(!g.hidden){refreshList();g.scrollIntoView({behavior:"smooth",block:"start"})}};
 
-// FULL DATA: ZIP con todas las TDE guardadas y sus archivos
+// FULL DATA: ZIP con todas las TDE de la base y sus archivos
+function fileList(r){
+ var a=r.archivos||{},out=[];
+ if(a.logo)out.push(["logo/"+a.logo.nombre,a.logo.ruta]);
+ if(a.foto)out.push(["foto/"+a.foto.nombre,a.foto.ruta]);
+ (a.presentacion||[]).forEach(function(x){out.push(["presentacion/"+x.nombre,x.ruta])});
+ (a.catalogo||[]).forEach(function(x){out.push(["catalogo/"+x.nombre,x.ruta])});
+ return out}
 $("fulld").onclick=function(){
  if(typeof JSZip==="undefined"){gsay("No se pudo cargar el generador de ZIP. Revisá la conexión y probá otra vez.");return}
- gsay("Preparando ZIP…");
- dbAll().then(function(recs){
+ gsay("Preparando ZIP… puede tardar si hay muchos archivos.");
+ dbList().then(function(recs){
   if(!recs.length){gsay("No hay TDE guardadas para descargar.");return}
-  recs.sort(function(a,b){return a.fecha<b.fecha?-1:1});
+  recs.sort(function(a,b){return a.creado_en<b.creado_en?-1:1});
   var zip=new JSZip();
-  var index=recs.map(function(r,i){return {n:i+1,id:r.id,fecha:r.fecha,plan:r.plan,datos:r.datos,
-   carpeta:"TDE_"+(i+1)+"_"+slug(r.fantasia||r.persona),
-   archivos:{logo:r.logo?r.logo.name:null,foto:r.foto?r.foto.name:null,
-    presentacion:r.pres.map(function(f){return f.name}),catalogo:r.cat.map(function(f){return f.name})}}});
+  var index=recs.map(function(r,i){return {n:i+1,id:r.id,creado_en:r.creado_en,plan:r.plan,datos:r.datos,carpeta:"TDE_"+(i+1)+"_"+slug(r.fantasia||r.persona),archivos:r.archivos}});
   zip.file("TDE_DATOS.json",JSON.stringify(index,null,2));
+  var jobs=[];
   recs.forEach(function(r,i){
    var dir=index[i].carpeta+"/";
-   zip.file(dir+"ficha.txt",r.ficha);
-   if(r.logo)zip.file(dir+"logo/"+r.logo.name,r.logo);
-   if(r.foto)zip.file(dir+"foto/"+r.foto.name,r.foto);
-   r.pres.forEach(function(f){zip.file(dir+"presentacion/"+f.name,f)});
-   r.cat.forEach(function(f){zip.file(dir+"catalogo/"+f.name,f)});
+   zip.file(dir+"ficha.txt",r.ficha||"");
+   fileList(r).forEach(function(x){
+    jobs.push(downloadFile(x[1]).then(function(b){zip.file(dir+x[0],b)}))});
   });
-  return zip.generateAsync({type:"blob"}).then(function(blob){
+  return Promise.all(jobs).then(function(){return zip.generateAsync({type:"blob"})}).then(function(blob){
    var stamp=new Date().toISOString().slice(0,16).replace(/[:T]/g,"-");
    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TDE_DATOS_FULL_"+stamp+".zip";
    document.body.appendChild(a);a.click();
@@ -467,20 +542,26 @@ $("fulld").onclick=function(){
 };
 
 // LIMPIAR BD: dos toques para confirmar
-var clrTimer=0;
+var clrTimer=0,dirty=false;
+try{dirty=localStorage.getItem("tde_dirty")==="1"}catch(e){}
+function setDirty(x){dirty=x;try{localStorage.setItem("tde_dirty",x?"1":"0")}catch(e){}}
 function disarm(){clearTimeout(clrTimer);clrTimer=0;$("clr").classList.remove("armed");$("clr").textContent="LIMPIAR BD"}
 $("clr").onclick=function(){
  if(!clrTimer){
   $("clr").classList.add("armed");$("clr").textContent="TOCÁ OTRA VEZ PARA BORRAR";
   clrTimer=setTimeout(disarm,6000);
-  gsay(state.dirty?"Todavía no descargaste FULL DATA desde la última TDE guardada. Descargalo antes de limpiar.":"Se borrarán todas las TDE guardadas en este navegador.");
+  gsay(dirty?"Todavía no descargaste FULL DATA desde la última TDE guardada. Descargalo antes de limpiar.":"Se borrarán todas las TDE guardadas en la base del equipo.");
   return}
  disarm();
- dbClear().then(function(){setDirty(false);refreshList();gsay("Base limpia. La próxima TDE generada se guarda desde cero.")},
-  function(e){gsay("No se pudo limpiar: "+(e&&e.message?e.message:e))});
+ dbList().then(function(recs){
+  var paths=[];
+  recs.forEach(function(r){fileList(r).forEach(function(x){paths.push(x[1])})});
+  return removeFiles(paths).then(deleteRows);
+ }).then(function(){setDirty(false);refreshList();gsay("Base limpia. La próxima TDE generada se guarda desde cero.")},
+ function(e){gsay("No se pudo limpiar: "+(e&&e.message?e.message:e))});
 };
 
-refreshList();
+showApp();
 </script>
 </body>
 </html>
