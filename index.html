@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Formulario TDE Multisistema</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* Estructura externa: degradé del logo MASTER (negro, verde neón, plata). Interior: colores claros para leer y completar. */
+:root{box-sizing:border-box;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg0:#020705;--bg1:#05200e;--bg2:#0d6b2a;--bg3:#2fe862;
+--panel:#f5fbf7;--field:#ffffff;--ink:#0d2116;--ink2:#48695a;--head:#0a7a3a;--bdl:rgba(10,122,58,.35);--fieldbd:#9ed6ad;
+--er:#c0392b;--ok:#137a3e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;min-height:100%;overflow-x:clip;color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+background-color:var(--bg0);background-image:linear-gradient(170deg,var(--bg0) 0%,var(--bg1) 38%,var(--bg2) 78%,var(--bg3) 100%);background-attachment:fixed;
+padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+.wrap{max-width:720px;margin:0 auto}
+.hero{display:block;width:100%;height:auto;border-radius:16px;margin:0 0 16px;box-shadow:0 10px 36px rgba(0,0,0,.55)}
+.intro{background:var(--panel);border:1px solid var(--bdl);border-radius:14px;padding:14px 16px;margin:0 0 14px}
+.intro h1{font-family:Montserrat,system-ui,sans-serif;font-size:1.5rem;font-weight:800;line-height:1.2;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px;color:var(--head);text-wrap:balance}
+.intro input{font-size:1.1rem;font-weight:700;letter-spacing:.5px;width:100%;margin-top:4px;padding:10px;border:1px solid var(--fieldbd);border-radius:9px;background:var(--field);color:var(--ink);font-family:inherit}
+.intro label{display:block;font-size:.88rem;font-weight:600;color:var(--ink)}
+.intro .dest{margin:6px 0 0;font-size:.85rem;color:var(--ink2)}
+fieldset{background:var(--panel);border:1px solid var(--bdl);border-radius:14px;margin:14px 0;padding:14px 16px 6px;box-shadow:0 2px 12px rgba(0,0,0,.25);overflow:hidden}
+.sh{display:block;margin:-14px -16px 16px;padding:14px 18px;background:linear-gradient(90deg,#052a12 0%,#0d6b2a 60%,#1f9e47 100%);color:#ffffff;font-family:Montserrat,system-ui,sans-serif;font-weight:800;font-size:1.1rem;line-height:1.3;letter-spacing:.8px;text-transform:uppercase;border-bottom:3px solid #3ef07a}
+label{display:block;font-size:.88rem;font-weight:600;margin:0 0 12px;color:var(--ink)}
+label small{display:block;font-weight:400;color:var(--ink2);margin-top:2px}
+input,select,textarea{width:100%;margin-top:4px;padding:10px;border:1px solid var(--fieldbd);border-radius:9px;background:var(--field);color:var(--ink);font:inherit}
+input[type=file]{padding:8px;font-weight:400;color:var(--ink2)}
+input:disabled,select:disabled,textarea:disabled{opacity:.5}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--head);border-color:var(--head);box-shadow:0 0 8px rgba(10,122,58,.25)}
+input.miss,select.miss{border:2px solid var(--er);background:#fff5f3}
+textarea{min-height:70px;resize:vertical}
+.req:after{content:" *";color:var(--er)}
+.fl{margin:4px 0 0;font-size:.82rem;font-weight:400;color:var(--ink2);word-break:break-all}
+.fl.bad{color:var(--er)}
+.sub{margin:4px 0 12px;padding:12px;border:1px dashed var(--bdl);border-radius:10px;background:#ffffff}
+.sub h3{font-family:Montserrat,system-ui,sans-serif;margin:0 0 8px;font-size:1.05rem;font-weight:700;line-height:1.3;letter-spacing:.3px;color:var(--head)}
+.opt{font-weight:400;color:var(--ink2);font-size:.8rem}
+.gowrap{margin:22px 0 10px}
+#go{display:block;width:100%;border:0;border-radius:999px;padding:20px 24px;cursor:pointer;font:inherit;font-weight:800;font-size:1.2rem;letter-spacing:4px;color:#021007;
+background:linear-gradient(90deg,#c9d3d9 0%,#3ef07a 35%,#0d7a33 60%,#3ef07a 80%,#c9d3d9 100%);box-shadow:0 8px 24px rgba(13,122,51,.35);transition:filter .3s ease,transform .3s ease}
+#go:hover{filter:brightness(1.1);transform:translateY(-2px)}
+#go:focus-visible{outline:3px solid var(--head);outline-offset:3px}
+#gbtn{display:block;width:100%;border-radius:999px;padding:16px 24px;cursor:pointer;font:inherit;font-weight:800;font-size:1.05rem;letter-spacing:3px;color:#ffffff;border:0;background:linear-gradient(90deg,#052a12,#0d6b2a 55%,#1f9e47);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+#gbtn:hover{filter:brightness(1.12)}
+#pend{margin:8px 0}
+#pend[hidden],#sent[hidden],#guard[hidden]{display:none}
+#pend .err{background:#fff5f3;border:2px solid var(--er);border-radius:12px;padding:12px 14px;color:#7a1f14;font-size:.92rem}
+#pend .err ul{margin:6px 0 0;padding-left:20px}
+#sent{margin:12px 0;background:#ffffff;border:2px solid var(--head);border-radius:14px;padding:14px 16px}
+#sent h2{font-family:Montserrat,system-ui,sans-serif;font-size:1.1rem;margin:0 0 6px;color:var(--head);text-transform:uppercase;letter-spacing:.6px}
+#guard{margin:14px 0 0;background:var(--panel);border:1px solid var(--bdl);border-radius:14px;padding:14px 16px;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+#guard h2{font-family:Montserrat,system-ui,sans-serif;font-size:1.2rem;margin:0 0 6px;color:var(--head);text-transform:uppercase;letter-spacing:.8px}
+.item{border:1px solid var(--fieldbd);border-radius:10px;background:#ffffff;padding:10px 12px;margin:8px 0}
+.item b{color:var(--ink)}
+.item small{display:block;color:var(--ink2)}
+.item pre{margin:8px 0 0}
+.acts{margin:12px 0 4px;display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:inherit;font-weight:800;border-radius:999px;padding:14px 20px;cursor:pointer;text-decoration:none;text-align:center;border:0;background:var(--head);color:#ffffff;display:inline-block}
+.btn.wa{background:#1f9e47;color:#ffffff;display:block;text-align:center;margin:10px 0 6px;font-size:1.05rem;letter-spacing:.3px}
+.btn.sec{background:transparent;color:var(--head);border:1.5px solid var(--head)}
+.btn.danger{background:#ffffff;color:var(--er);border:1.5px solid var(--er)}
+.btn.danger.armed{background:var(--er);color:#ffffff}
+.btn:hover{filter:brightness(1.08)}
+[hidden]{display:none!important}
+pre{background:var(--field);border:1px solid var(--fieldbd);border-radius:10px;padding:12px;white-space:pre-wrap;word-break:break-word;font:.82rem/1.5 ui-monospace,Menlo,Consolas,monospace;max-height:340px;overflow:auto;color:var(--ink)}
+pre.ficha{display:none}
+pre.ficha.open{display:block}
+.note{font-size:.88rem;color:var(--ink2)}
+#gmsg,#smsg{font-weight:600;color:var(--ok);min-height:1.4em;margin-top:6px}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<img class="hero" src="img/header.png" alt="Multisistema · TDE · Ingresa tus datos / Identidad" width="1448" height="1086">
+
+<section class="intro">
+<h1>MULTISISTEMA · Gabriel D'Amico</h1>
+<label for="notif">Celu que recibirá la notificación por WhatsApp de la TDE generada</label>
+<input type="tel" id="notif" value="+5493425040582" inputmode="tel" autocomplete="off">
+<p class="dest">La notificación se envía por WhatsApp a este número al tocar GENERAR.</p>
+</section>
+
+<form id="f" onsubmit="return false">
+
+<fieldset>
+<div class="sh">1. Logo y foto</div>
+<label><span class="req">Logo MASTER en PNG</span>
+<small>Fondo transparente, mínimo 1000 px de ancho, nítido. El formato PNG es clave para el diseño de la TDE.</small>
+<input type="file" id="logo" accept="image/png">
+<div class="fl" id="fl_logo"></div></label>
+<label><span>Foto en PNG</span>
+<small>Se muestra en círculo: encuadre centrado, rostro o fachada bien visible.</small>
+<input type="file" id="foto" accept="image/png">
+<div class="fl" id="fl_foto"></div></label>
+</fieldset>
+
+<fieldset>
+<div class="sh">2. Tipo TDE</div>
+<label><span class="req">Plan elegido</span>
+<select id="plan"><option value="">— Elegí un plan —</option><option>Estándar</option><option>Full</option><option>Premium</option></select>
+<div class="fl" id="pinfo"></div></label>
+<label><span>Precio neto acordado con el cliente</span>
+<small>Ingresá el neto. El sistema calcula el IVA (21%) y el total final.</small>
+<input type="number" id="neto" min="0" step="0.01" placeholder="a definir">
+<div class="fl" id="calc">Precio neto: a definir</div></label>
+</fieldset>
+
+<fieldset>
+<div class="sh">3. Datos del contacto</div>
+<label><span class="req">Nombre y apellido</span>
+<small>Figura abajo del logo principal.</small>
+<input type="text" id="persona" autocomplete="name"></label>
+<label><span>Cargo</span>
+<small>Va abajo del nombre y apellido.</small>
+<input type="text" id="cargo" placeholder="Ej: CEO &amp; Fundador"></label>
+<label><span class="req">Celular</span>
+<input type="tel" id="cel" placeholder="Ej: +54 9 261 651 8318"></label>
+<label><span class="req">E-mail</span>
+<input type="email" id="mail" autocomplete="email"></label>
+<label><span>Sitio web</span>
+<input type="text" id="web" placeholder="www.minegocio.com"></label>
+</fieldset>
+
+<fieldset>
+<div class="sh">4. Ubicación</div>
+<label><span class="req">Provincia</span>
+<select id="prov">
+<option value="">— Elegí una provincia —</option>
+<option>Buenos Aires</option><option>Ciudad Autónoma de Buenos Aires</option><option>Catamarca</option><option>Chaco</option><option>Chubut</option><option>Córdoba</option><option>Corrientes</option><option>Entre Ríos</option><option>Formosa</option><option>Jujuy</option><option>La Pampa</option><option>La Rioja</option><option>Mendoza</option><option>Misiones</option><option>Neuquén</option><option>Río Negro</option><option>Salta</option><option>San Juan</option><option>San Luis</option><option>Santa Cruz</option><option>Santa Fe</option><option>Santiago del Estero</option><option>Tierra del Fuego</option><option>Tucumán</option>
+</select></label>
+<label><span class="req">Localidad</span>
+<small id="loch">Primero elegí la provincia</small>
+<select id="loc" disabled><option value="">— Elegí una provincia primero —</option></select>
+<input type="text" id="locT" placeholder="Escribí la localidad" hidden></label>
+<label><span class="req">Dirección</span>
+<small>Debe contener el número (calle y número).</small>
+<input type="text" id="dir" placeholder="Ej: San Martín 380">
+<div class="fl" id="fl_dir"></div></label>
+<label><span class="req">País</span>
+<input type="text" id="pais" placeholder="Ej: Argentina"></label>
+</fieldset>
+
+<fieldset>
+<div class="sh">5. Datos de la empresa</div>
+<label><span class="req">Nombre de fantasía</span>
+<input type="text" id="fantasia"></label>
+<label><span class="req">Rubro</span>
+<input type="text" id="rubro" placeholder="Ej: gastronomía, abogacía, ferretería"></label>
+</fieldset>
+
+<fieldset>
+<div class="sh">6. Redes sociales</div>
+<label><span>Instagram</span><input type="text" id="ig" placeholder="@usuario o link"></label>
+<label><span>Facebook</span><input type="text" id="fb" placeholder="link de la página"></label>
+<label><span>LinkedIn</span><input type="text" id="li" placeholder="link del perfil"></label>
+<label><span>TikTok</span><input type="text" id="tt" placeholder="@usuario o link"></label>
+</fieldset>
+
+<fieldset>
+<div class="sh">7. Observaciones</div>
+<label><span>Algo más que quieras contarnos</span>
+<textarea id="obs" placeholder="Ideas, referencias, fecha en la que la necesitás..."></textarea></label>
+
+<div class="sub">
+<h3>Presentación <span class="opt">(opcional)</span></h3>
+<label><span>Comentarios sobre la presentación</span>
+<textarea id="pres_c" placeholder="Qué querés que muestre la presentación..."></textarea></label>
+<label><span>Archivos de la presentación</span>
+<small>PDF, PowerPoint o imágenes. Podés elegir varios.</small>
+<input type="file" id="pres_f" multiple accept=".pdf,.ppt,.pptx,image/*">
+<div class="fl" id="fl_pres_f"></div></label>
+</div>
+
+<div class="sub">
+<h3>Catálogo <span class="opt">(opcional)</span></h3>
+<label><span>Comentarios sobre el catálogo</span>
+<textarea id="cat_c" placeholder="Qué productos o servicios incluir..."></textarea></label>
+<label><span>Archivos del catálogo</span>
+<small>PDF o imágenes. Podés elegir varios.</small>
+<input type="file" id="cat_f" multiple accept=".pdf,image/*">
+<div class="fl" id="fl_cat_f"></div></label>
+</div>
+</fieldset>
+
+<div class="gowrap">
+<button type="button" id="go">GENERAR</button>
+</div>
+<div id="pend" role="alert" hidden></div>
+</form>
+
+<section id="sent" role="status">
+<h2>TDE generada</h2>
+<p class="note" id="sent_txt"></p>
+<a class="btn wa" id="wlink" target="_blank" rel="noopener">Enviar notificación por WhatsApp</a>
+<p id="smsg"></p>
+</section>
+
+<div class="gowrap">
+<button type="button" id="gbtn">TDE GUARDADA</button>
+</div>
+
+<section id="guard">
+<h2>TDE GUARDADA</h2>
+<p class="note" id="gcount">Cargando…</p>
+<div id="glist"></div>
+<div class="acts">
+<button type="button" id="fulld" class="btn">FULL DATA (ZIP)</button>
+<button type="button" id="clr" class="btn danger">LIMPIAR BD</button>
+</div>
+<p class="note">FULL DATA descarga en un ZIP todas las TDE guardadas, con sus archivos. Descargalo antes de LIMPIAR BD.</p>
+<div id="gmsg" role="status"></div>
+</section>
+
+</main>
+<script>
+// ---- CONFIGURACIÓN DEL ESTUDIO (editar si cambia) ----
+var WA="5492616518318";
+var PLINFO={
+ "Estándar":"Botones: WhatsApp, Llamar, Cómo llegar y Sitio Web · Redes: Instagram, Facebook y LinkedIn.",
+ "Full":"Botones: WhatsApp, Llamar, Cómo llegar y Sitio Web · Redes: Instagram, Facebook y LinkedIn.",
+ "Premium":"Botones: WhatsApp, Llamar, Cómo llegar, Sitio Web, Presentación y Catálogo · Redes: Instagram, Facebook, LinkedIn y TikTok."
+};
+var WA_MSG="TDE GENERADA - Multisistema\nIngresar TDE DATOS / IDENTIDAD\nY ejecutar TDE GUARDADA (abajo de GENERAR) para ver toda la info de la misma";
+
+var files={};
+function $(i){return document.getElementById(i)}
+function v(i){return ($(i).value||"").trim()}
+function setFl(id,msg,bad){var e=$(id);e.textContent=msg||"";e.className="fl"+(bad?" bad":"")}
+function money(n){return "$ "+n.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function names(id){return [].slice.call($(id).files||[]).map(function(x){return x.name})}
+function notifDigits(){return $("notif").value.replace(/\D/g,"")}
+function locVal(){return $("loc").hidden?v("locT"):($("loc").value||"").trim()}
+
+// ---- Almacenamiento: TDE DATOS (IndexedDB en este navegador) ----
+var state={dirty:false};
+try{state.dirty=localStorage.getItem("tde_dirty")==="1"}catch(e){}
+function setDirty(x){state.dirty=x;try{localStorage.setItem("tde_dirty",x?"1":"0")}catch(e){}}
+function dbOpen(){return new Promise(function(res,rej){
+ if(!window.indexedDB){rej(new Error("este navegador no permite guardar datos"));return}
+ var r=indexedDB.open("TDE_DATOS",1);
+ r.onupgradeneeded=function(){r.result.createObjectStore("tde",{keyPath:"id"})};
+ r.onsuccess=function(){res(r.result)};
+ r.onerror=function(){rej(r.error)}})}
+function dbTx(mode,fn){return dbOpen().then(function(db){return new Promise(function(res,rej){
+ var tx=db.transaction("tde",mode),st=tx.objectStore("tde"),req=fn(st);
+ tx.oncomplete=function(){db.close();res(req?req.result:undefined)};
+ tx.onerror=function(){db.close();rej(tx.error)};
+ tx.onabort=function(){db.close();rej(tx.error)}})})}
+function dbAll(){return dbTx("readonly",function(st){return st.getAll()})}
+function dbPut(rec){return dbTx("readwrite",function(st){return st.put(rec)})}
+function dbClear(){return dbTx("readwrite",function(st){return st.clear()})}
+
+// ---- Formulario ----
+$("plan").onchange=function(){var p=v("plan");$("pinfo").textContent=p?"Plan "+p+": "+PLINFO[p]:""};
+
+// Provincia -> localidades de esa provincia (API pública de Georef, Argentina).
+var locToken=0;
+function resetLoc(msg){
+ $("loc").hidden=false;$("locT").hidden=true;$("locT").value="";
+ $("loc").disabled=true;$("loc").innerHTML='<option value="">— Elegí una provincia primero —</option>';
+ $("loch").textContent=msg||"Primero elegí la provincia"}
+$("prov").onchange=function(){
+ var p=v("prov"),tk=++locToken;
+ if(!p){resetLoc();return}
+ resetLoc("Cargando localidades de "+p+"…");
+ fetch("https://apis.datos.gob.ar/georef/api/localidades?provincia="+encodeURIComponent(p)+"&campos=nombre&max=5000")
+  .then(function(r){if(!r.ok)throw new Error("http");return r.json()})
+  .then(function(d){
+   if(tk!==locToken)return;
+   var list=(d.localidades||[]).map(function(x){return x.nombre}).filter(Boolean);
+   list=list.filter(function(x,i){return list.indexOf(x)===i}).sort(function(a,b){return a.localeCompare(b,"es")});
+   if(!list.length)throw new Error("vacío");
+   var sel=$("loc");sel.innerHTML='<option value="">— Elegí una localidad —</option>';
+   list.forEach(function(n){var o=document.createElement("option");o.value=n;o.textContent=n;sel.appendChild(o)});
+   sel.disabled=false;$("loch").textContent=list.length+" localidades de "+p;
+  })
+  .catch(function(){
+   if(tk!==locToken)return;
+   $("loc").hidden=true;$("locT").hidden=false;
+   $("loch").textContent="No se pudo cargar la lista: escribí la localidad";
+  });
+};
+
+$("neto").oninput=function(){var n=parseFloat($("neto").value);
+ if(!(n>0)){$("calc").textContent="Precio neto: a definir";return}
+ var iva=n*0.21;$("calc").textContent="Neto: "+money(n)+" · IVA (21%): "+money(iva)+" · Total final: "+money(n+iva)};
+
+$("logo").onchange=function(){
+ var f=this.files[0];files.logo=null;if(!f){setFl("fl_logo","");return}
+ if(f.type!=="image/png"){setFl("fl_logo","El logo debe ser PNG (con fondo transparente).",true);$("logo").value="";return}
+ var u=URL.createObjectURL(f),im=new Image();
+ im.onload=function(){URL.revokeObjectURL(u);
+  if(im.naturalWidth<1000){setFl("fl_logo","El logo tiene "+im.naturalWidth+" px de ancho; el mínimo es 1000 px.",true);return}
+  files.logo=f;setFl("fl_logo",f.name+" ("+im.naturalWidth+" px · "+Math.round(f.size/1024)+" KB)",false)};
+ im.onerror=function(){setFl("fl_logo","No se pudo leer el archivo del logo.",true)};
+ im.src=u};
+
+$("foto").onchange=function(){
+ var f=this.files[0];files.foto=null;if(!f){setFl("fl_foto","");return}
+ if(f.type!=="image/png"){setFl("fl_foto","La foto debe ser PNG.",true);$("foto").value="";return}
+ files.foto=f;setFl("fl_foto",f.name+" ("+Math.round(f.size/1024)+" KB)",false)};
+
+$("pres_f").onchange=function(){setFl("fl_pres_f",names("pres_f").join(" · "))};
+$("cat_f").onchange=function(){setFl("fl_cat_f",names("cat_f").join(" · "))};
+
+function checkDir(){var d=v("dir");if(!d){setFl("fl_dir","");return true}
+ if(!/\d/.test(d)){setFl("fl_dir","La dirección debe incluir el número (calle y número).",true);return false}
+ setFl("fl_dir","");return true}
+$("dir").onblur=checkDir;
+
+// Faltantes: [etiqueta, id del elemento a marcar]
+function miss(){
+ var m=[];
+ [["persona","Nombre y apellido"],["cel","Celular"],["mail","E-mail"],["dir","Dirección"],["pais","País"],["fantasia","Nombre de fantasía"],["rubro","Rubro"]].forEach(function(p){
+  if(!v(p[0]))m.push([p[1],p[0]])});
+ if(!v("prov"))m.push(["Provincia","prov"]);
+ if(!locVal())m.push(["Localidad",$("loc").hidden?"locT":"loc"]);
+ if(!v("plan"))m.push(["Plan elegido","plan"]);
+ if(!files.logo)m.push(["Logo en PNG (mínimo 1000 px)","logo"]);
+ if(v("dir")&&!/\d/.test(v("dir")))m.push(["Dirección con número","dir"]);
+ if(notifDigits().length<8)m.push(["Celu para la notificación (arriba)","notif"]);
+ return m}
+
+function collect(){
+ var o={};
+ ["persona","cargo","cel","mail","web","prov","dir","pais","fantasia","rubro","ig","fb","li","tt","obs","pres_c","cat_c","plan","neto"].forEach(function(k){o[k]=v(k)});
+ o.localidad=locVal();
+ o.celular_notificacion=$("notif").value.trim();
+ return o}
+
+function build(){
+ var L=["FICHA TARJETA DIGITAL EMPRESARIAL (TDE) - Multisistema",""];
+ function sec(t,rows){if(rows.length){L.push("## "+t);L=L.concat(rows,"")}}
+ function keep(rows){return rows.filter(function(x){return !/: $/.test(x)})}
+ var n=parseFloat($("neto").value);
+ sec("1. LOGO Y FOTO",[
+  "Logo MASTER (PNG): "+(files.logo?files.logo.name:"(sin archivo)"),
+  "Foto (PNG): "+(files.foto?files.foto.name:"(sin archivo)")]);
+ var t2=["Plan: "+v("plan")];
+ if(n>0)t2.push("Precio neto: "+money(n)+" · IVA (21%): "+money(n*0.21)+" · Total final: "+money(n*1.21));
+ else t2.push("Precio neto: a definir");
+ sec("2. TIPO TDE",t2);
+ sec("3. DATOS DEL CONTACTO",keep([
+  "Nombre y apellido: "+v("persona"),"Cargo: "+v("cargo"),"Celular: "+v("cel"),"E-mail: "+v("mail"),"Sitio web: "+v("web")]));
+ sec("4. UBICACIÓN",keep([
+  "Provincia: "+v("prov"),"Localidad: "+locVal(),"Dirección: "+v("dir"),"País: "+v("pais")]));
+ sec("5. DATOS DE LA EMPRESA",keep([
+  "Nombre de fantasía: "+v("fantasia"),"Rubro: "+v("rubro")]));
+ sec("6. REDES SOCIALES",keep([
+  "Instagram: "+v("ig"),"Facebook: "+v("fb"),"LinkedIn: "+v("li"),"TikTok: "+v("tt")]));
+ var sRows=[];
+ if(v("obs"))sRows.push("Observaciones: "+v("obs"));
+ if(v("pres_c"))sRows.push("Presentación - comentarios: "+v("pres_c"));
+ if(names("pres_f").length)sRows.push("Presentación - archivos: "+names("pres_f").join(", "));
+ if(v("cat_c"))sRows.push("Catálogo - comentarios: "+v("cat_c"));
+ if(names("cat_f").length)sRows.push("Catálogo - archivos: "+names("cat_f").join(", "));
+ sec("7. OBSERVACIONES",sRows);
+ return L.join("\n")}
+
+function saveRecord(ficha){
+ var rec={id:Date.now()+"-"+Math.random().toString(36).slice(2,7),
+  fecha:new Date().toISOString(),
+  fantasia:v("fantasia"),persona:v("persona"),plan:v("plan"),
+  datos:collect(),ficha:ficha,
+  logo:files.logo||null,foto:files.foto||null,
+  pres:[].slice.call($("pres_f").files),cat:[].slice.call($("cat_f").files)};
+ return dbPut(rec).then(function(){setDirty(true);return rec})}
+
+function markMissing(list){
+ document.querySelectorAll(".miss").forEach(function(e){e.classList.remove("miss")});
+ list.forEach(function(x){var e=$(x[1]);if(e)e.classList.add("miss")})}
+
+// ---- GENERAR: notifica por WhatsApp y guarda la TDE en TDE DATOS ----
+$("go").onclick=function(){
+ var box=$("pend"),m=miss();
+ if(m.length){
+  markMissing(m);
+  box.hidden=false;box.innerHTML="";
+  var h=document.createElement("div");h.className="err";
+  h.innerHTML="<b>Para generar la TDE falta completar:</b><ul></ul>";
+  m.forEach(function(x){var li=document.createElement("li");li.textContent=x[0];h.querySelector("ul").appendChild(li)});
+  box.appendChild(h);
+  var first=$(m[0][1]);if(first)first.scrollIntoView({behavior:"smooth",block:"center"});
+  return}
+ markMissing([]);box.hidden=true;box.innerHTML="";
+
+ var dest=$("notif").value.trim();
+ var url="https://wa.me/"+notifDigits()+"?text="+encodeURIComponent(WA_MSG);
+ var w=null;try{w=window.open(url,"_blank")}catch(e){w=null}
+
+ var sent=$("sent");sent.hidden=false;
+ $("sent_txt").textContent="Notificación para "+dest+". TDE guardada en TDE DATOS: podés verla abajo en TDE GUARDADA.";
+ var a=$("wlink");a.href=url;a.textContent="Enviar notificación por WhatsApp a "+dest;
+ $("smsg").textContent=w?"Se abrió WhatsApp con la notificación. Tocá Enviar para confirmar.":"Si no se abrió WhatsApp, tocá el botón verde para enviar la notificación.";
+ sent.scrollIntoView({behavior:"smooth",block:"center"});
+
+ var ficha=build();
+ saveRecord(ficha).then(function(){
+  $("smsg").textContent+=" La TDE quedó guardada en este navegador.";
+  refreshList();
+ },function(e){
+  $("smsg").textContent="No se pudo guardar la TDE en este navegador: "+(e&&e.message?e.message:e);
+ });
+};
+
+// ---- TDE GUARDADA ----
+function gsay(t){$("gmsg").textContent=t}
+function slug(s){return (s||"cliente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"cliente"}
+
+function refreshList(){
+ return dbAll().then(function(recs){
+  recs.sort(function(a,b){return a.fecha<b.fecha?1:-1});
+  $("gcount").textContent=recs.length?(recs.length+(recs.length===1?" TDE guardada":" TDE guardadas")+" en TDE DATOS"):"No hay TDE guardadas todavía.";
+  var list=$("glist");list.innerHTML="";
+  recs.forEach(function(r){
+   var d=document.createElement("div");d.className="item";
+   var b=document.createElement("b");b.textContent=r.fantasia||r.persona||"Sin nombre";
+   var s=document.createElement("small");s.textContent=new Date(r.fecha).toLocaleString("es-AR")+" · Plan "+r.plan;
+   var btn=document.createElement("button");btn.type="button";btn.className="btn sec";btn.textContent="Ver ficha";
+   var pre=document.createElement("pre");pre.className="ficha";pre.textContent=r.ficha;
+   btn.onclick=function(){pre.classList.toggle("open");btn.textContent=pre.classList.contains("open")?"Ocultar ficha":"Ver ficha"};
+   d.appendChild(b);d.appendChild(s);d.appendChild(btn);d.appendChild(pre);list.appendChild(d)});
+ }).catch(function(e){$("gcount").textContent="No se pudo leer TDE DATOS en este navegador."})}
+
+$("gbtn").onclick=function(){
+ var g=$("guard");g.hidden=!g.hidden;
+ if(!g.hidden){refreshList();g.scrollIntoView({behavior:"smooth",block:"start"})}};
+
+// FULL DATA: ZIP con todas las TDE guardadas y sus archivos
+$("fulld").onclick=function(){
+ if(typeof JSZip==="undefined"){gsay("No se pudo cargar el generador de ZIP. Revisá la conexión y probá otra vez.");return}
+ gsay("Preparando ZIP…");
+ dbAll().then(function(recs){
+  if(!recs.length){gsay("No hay TDE guardadas para descargar.");return}
+  recs.sort(function(a,b){return a.fecha<b.fecha?-1:1});
+  var zip=new JSZip();
+  var index=recs.map(function(r,i){return {n:i+1,id:r.id,fecha:r.fecha,plan:r.plan,datos:r.datos,
+   carpeta:"TDE_"+(i+1)+"_"+slug(r.fantasia||r.persona),
+   archivos:{logo:r.logo?r.logo.name:null,foto:r.foto?r.foto.name:null,
+    presentacion:r.pres.map(function(f){return f.name}),catalogo:r.cat.map(function(f){return f.name})}}});
+  zip.file("TDE_DATOS.json",JSON.stringify(index,null,2));
+  recs.forEach(function(r,i){
+   var dir=index[i].carpeta+"/";
+   zip.file(dir+"ficha.txt",r.ficha);
+   if(r.logo)zip.file(dir+"logo/"+r.logo.name,r.logo);
+   if(r.foto)zip.file(dir+"foto/"+r.foto.name,r.foto);
+   r.pres.forEach(function(f){zip.file(dir+"presentacion/"+f.name,f)});
+   r.cat.forEach(function(f){zip.file(dir+"catalogo/"+f.name,f)});
+  });
+  return zip.generateAsync({type:"blob"}).then(function(blob){
+   var stamp=new Date().toISOString().slice(0,16).replace(/[:T]/g,"-");
+   var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TDE_DATOS_FULL_"+stamp+".zip";
+   document.body.appendChild(a);a.click();
+   setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500);
+   setDirty(false);
+   gsay("ZIP descargado con "+recs.length+(recs.length===1?" TDE.":" TDE."));
+  });
+ }).catch(function(e){gsay("No se pudo generar el ZIP: "+(e&&e.message?e.message:e))});
+};
+
+// LIMPIAR BD: dos toques para confirmar
+var clrTimer=0;
+function disarm(){clearTimeout(clrTimer);clrTimer=0;$("clr").classList.remove("armed");$("clr").textContent="LIMPIAR BD"}
+$("clr").onclick=function(){
+ if(!clrTimer){
+  $("clr").classList.add("armed");$("clr").textContent="TOCÁ OTRA VEZ PARA BORRAR";
+  clrTimer=setTimeout(disarm,6000);
+  gsay(state.dirty?"Todavía no descargaste FULL DATA desde la última TDE guardada. Descargalo antes de limpiar.":"Se borrarán todas las TDE guardadas en este navegador.");
+  return}
+ disarm();
+ dbClear().then(function(){setDirty(false);refreshList();gsay("Base limpia. La próxima TDE generada se guarda desde cero.")},
+  function(e){gsay("No se pudo limpiar: "+(e&&e.message?e.message:e))});
+};
+
+refreshList();
+</script>
+</body>
+</html>
