@@ -26,7 +26,6 @@ padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(
 .intro input{font-size:1.1rem;font-weight:700;letter-spacing:.5px;width:100%;margin-top:4px;padding:10px;border:1px solid var(--fieldbd);border-radius:9px;background:var(--field);color:var(--ink);font-family:inherit}
 .intro label{display:block;font-size:.88rem;font-weight:600;color:var(--ink)}
 .intro .dest{margin:6px 0 0;font-size:.85rem;color:var(--ink2)}
-.authbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:.85rem;color:var(--ink2)}
 fieldset{background:var(--panel);border:1px solid var(--bdl);border-radius:14px;margin:14px 0;padding:14px 16px 6px;box-shadow:0 2px 12px rgba(0,0,0,.25);overflow:hidden}
 .sh{display:block;margin:-14px -16px 16px;padding:14px 18px;background:linear-gradient(90deg,#052a12 0%,#0d6b2a 60%,#1f9e47 100%);color:#ffffff;font-family:Montserrat,system-ui,sans-serif;font-weight:800;font-size:1.1rem;line-height:1.3;letter-spacing:.8px;text-transform:uppercase;border-bottom:3px solid #3ef07a}
 label{display:block;font-size:.88rem;font-weight:600;margin:0 0 12px;color:var(--ink)}
@@ -51,7 +50,7 @@ background:linear-gradient(90deg,#c9d3d9 0%,#3ef07a 35%,#0d7a33 60%,#3ef07a 80%,
 #gbtn{display:block;width:100%;border-radius:999px;padding:16px 24px;cursor:pointer;font:inherit;font-weight:800;font-size:1.05rem;letter-spacing:3px;color:#ffffff;border:0;background:linear-gradient(90deg,#052a12,#0d6b2a 55%,#1f9e47);box-shadow:0 6px 18px rgba(0,0,0,.35)}
 #gbtn:hover{filter:brightness(1.12)}
 #pend{margin:8px 0}
-#pend[hidden],#sent[hidden],#guard[hidden],#app[hidden],#login[hidden]{display:none}
+#pend[hidden],#sent[hidden],#guard[hidden]{display:none}
 #pend .err{background:#fff5f3;border:2px solid var(--er);border-radius:12px;padding:12px 14px;color:#7a1f14;font-size:.92rem}
 #pend .err ul{margin:6px 0 0;padding-left:20px}
 #sent{margin:12px 0;background:#ffffff;border:2px solid var(--head);border-radius:14px;padding:14px 16px}
@@ -74,8 +73,7 @@ pre{background:var(--field);border:1px solid var(--fieldbd);border-radius:10px;p
 pre.ficha{display:none}
 pre.ficha.open{display:block}
 .note{font-size:.88rem;color:var(--ink2)}
-#gmsg,#smsg,#lmsg{font-weight:600;color:var(--ok);min-height:1.4em;margin-top:6px}
-#lmsg{color:var(--er)}
+#gmsg,#smsg{font-weight:600;color:var(--ok);min-height:1.4em;margin-top:6px}
 </style>
 </head>
 <body>
@@ -88,23 +86,9 @@ pre.ficha.open{display:block}
 <label for="notif">Celu que recibirá la notificación por WhatsApp de la TDE generada</label>
 <input type="tel" id="notif" value="+5493425040582" inputmode="tel" autocomplete="off">
 <p class="dest">La notificación se envía por WhatsApp a este número al tocar GENERAR.</p>
-<div class="authbar" id="authbar">
-<span id="who"></span>
-<button type="button" id="logout" class="btn sec" hidden>Cerrar sesión</button>
-</div>
 </section>
 
-<fieldset id="login">
-<div class="sh">Ingreso del equipo</div>
-<label>Correo
-<input type="email" id="lemail" autocomplete="username"></label>
-<label>Contraseña
-<input type="password" id="lpass" autocomplete="current-password"></label>
-<button type="button" id="lbtn" class="btn">INGRESAR</button>
-<p id="lmsg" role="status"></p>
-</fieldset>
-
-<div id="app" hidden>
+<div id="app">
 
 <form id="f" onsubmit="return false">
 
@@ -233,7 +217,7 @@ pre.ficha.open{display:block}
 <button type="button" id="fulld" class="btn">FULL DATA (ZIP)</button>
 <button type="button" id="clr" class="btn danger">LIMPIAR BD</button>
 </div>
-<p class="note">FULL DATA descarga en un ZIP todas las TDE guardadas por el equipo, con sus archivos. Descargalo antes de LIMPIAR BD.</p>
+<p class="note">FULL DATA descarga en un ZIP todas las TDE guardadas, con sus archivos. Descargalo antes de LIMPIAR BD.</p>
 <div id="gmsg" role="status"></div>
 </section>
 
@@ -245,6 +229,7 @@ pre.ficha.open{display:block}
 var SB_URL="https://nhrmybezferegzetkttw.supabase.co";
 var SB_KEY="sb_publishable_dRAeO1MgXXvDAudV1ASEZw_-IrdVpxi";
 var BUCKET="tde-archivos";
+var MAX_TDE=3;
 var WA="5492616518318";
 var PLINFO={
  "Estándar":"Botones: WhatsApp, Llamar, Cómo llegar y Sitio Web · Redes: Instagram, Facebook y LinkedIn.",
@@ -264,47 +249,15 @@ function locVal(){return $("loc").hidden?v("locT"):($("loc").value||"").trim()}
 function safe(n){return n.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9._-]+/g,"_")}
 function slug(s){return (s||"cliente").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"cliente"}
 
-// ---- Sesión del equipo (Supabase Auth) ----
-var SESS_KEY="tde_session";
-function getSess(){try{return JSON.parse(localStorage.getItem(SESS_KEY)||"null")}catch(e){return null}}
-function setSess(s){try{if(s)localStorage.setItem(SESS_KEY,JSON.stringify(s));else localStorage.removeItem(SESS_KEY)}catch(e){}}
-function saveTokens(j){return {access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()+(j.expires_in||3600)*1000,email:(j.user&&j.user.email)||""}}
-function login(email,pass){
- return fetch(SB_URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json"},body:JSON.stringify({email:email,password:pass})})
-  .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error_description||j.msg||"Correo o contraseña incorrectos");return j})})
-  .then(function(j){var s=saveTokens(j);setSess(s);return s})}
-function refreshSess(s){
- return fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:s.refresh_token})})
-  .then(function(r){if(!r.ok)throw new Error("La sesión venció. Ingresá otra vez.");return r.json()})
-  .then(function(j){var n=saveTokens(j);setSess(n);return n})}
-function token(){
- var s=getSess();
- if(!s)return Promise.reject(new Error("Ingresá con tu usuario del equipo."));
- if(s.expires_at-Date.now()>60000)return Promise.resolve(s.access_token);
- return refreshSess(s).then(function(n){return n.access_token},function(e){setSess(null);showApp();throw e})}
+// ---- Acceso a Supabase (clave pública; las reglas de la base controlan lo permitido) ----
 function api(path,opts){
  opts=opts||{};
- return token().then(function(t){
-  var h=Object.assign({apikey:SB_KEY,Authorization:"Bearer "+t},opts.headers||{});
-  return fetch(SB_URL+path,Object.assign({},opts,{headers:h})).then(function(r){
-   if(!r.ok)return r.text().then(function(tx){throw new Error("Error "+r.status+": "+tx)});
-   return r})})}
+ var h=Object.assign({apikey:SB_KEY},opts.headers||{});
+ return fetch(SB_URL+path,Object.assign({},opts,{headers:h})).then(function(r){
+  if(!r.ok)return r.text().then(function(tx){throw new Error("Error "+r.status+": "+tx)});
+  return r})}
 
-function showApp(){
- var s=getSess(),on=!!s;
- $("login").hidden=on;$("app").hidden=!on;$("logout").hidden=!on;
- $("who").textContent=on?"Sesión: "+s.email:"";
- if(on)refreshList();}
-
-$("lbtn").onclick=function(){
- var e=v("lemail"),p=$("lpass").value;
- if(!e||!p){$("lmsg").textContent="Ingresá correo y contraseña.";return}
- $("lmsg").textContent="Ingresando…";
- login(e,p).then(function(){$("lpass").value="";$("lmsg").textContent="";showApp()},
-  function(err){$("lmsg").textContent=err.message||"No se pudo ingresar"})};
-$("logout").onclick=function(){setSess(null);showApp()};
-
-// ---- Datos y archivos en Supabase ----
+// ---- Datos y archivos ----
 function dbList(){return api("/rest/v1/tde_registros?select=*&order=creado_en.desc").then(function(r){return r.json()})}
 function uploadFile(path,f){return api("/storage/v1/object/"+BUCKET+"/"+path,{method:"POST",headers:{"Content-Type":f.type||"application/octet-stream","x-upsert":"false"},body:f})}
 function downloadFile(path){return api("/storage/v1/object/"+BUCKET+"/"+path).then(function(r){return r.blob()})}
@@ -313,6 +266,13 @@ function removeFiles(paths){
  if(!paths.length)return Promise.resolve();
  return api("/storage/v1/object/"+BUCKET,{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({prefixes:paths})})}
 function deleteRows(){return api("/rest/v1/tde_registros?id=not.is.null",{method:"DELETE",headers:{Prefer:"return=minimal"}})}
+function fileList(r){
+ var a=r.archivos||{},out=[];
+ if(a.logo)out.push(["logo/"+a.logo.nombre,a.logo.ruta]);
+ if(a.foto)out.push(["foto/"+a.foto.nombre,a.foto.ruta]);
+ (a.presentacion||[]).forEach(function(x){out.push(["presentacion/"+x.nombre,x.ruta])});
+ (a.catalogo||[]).forEach(function(x){out.push(["catalogo/"+x.nombre,x.ruta])});
+ return out}
 
 // ---- Formulario ----
 $("plan").onchange=function(){var p=v("plan");$("pinfo").textContent=p?"Plan "+p+": "+PLINFO[p]:""};
@@ -435,7 +395,6 @@ function saveRecord(ficha){
   .then(function(){setDirty(true);return id})}
 
 // Mantiene solo las MAX_TDE más nuevas: borra archivos y filas de las más viejas
-var MAX_TDE=3;
 function pruneOld(keep){
  return dbList().then(function(recs){
   var old=recs.slice(keep);
@@ -471,26 +430,24 @@ $("go").onclick=function(){
  var w=null;try{w=window.open(url,"_blank")}catch(e){w=null}
 
  var sent=$("sent");sent.hidden=false;
- $("sent_txt").textContent="Notificación para "+dest+". Guardando la TDE en la base del equipo…";
+ $("sent_txt").textContent="Notificación para "+dest+". Guardando la TDE…";
  var a=$("wlink");a.href=url;a.textContent="Enviar notificación por WhatsApp a "+dest;
  $("smsg").textContent=w?"Se abrió WhatsApp con la notificación. Tocá Enviar para confirmar.":"Si no se abrió WhatsApp, tocá el botón verde para enviar la notificación.";
  sent.scrollIntoView({behavior:"smooth",block:"center"});
 
  saveRecord(build()).then(function(){
-  $("sent_txt").textContent="Notificación para "+dest+". La TDE quedó guardada en la base del equipo: podés verla en TDE GUARDADA. Se conservan las últimas "+MAX_TDE+" TDE; las más viejas se eliminan automáticamente.";
+  $("sent_txt").textContent="Notificación para "+dest+". La TDE quedó guardada: podés verla en TDE GUARDADA. Se conservan las últimas "+MAX_TDE+" TDE; las más viejas se eliminan automáticamente.";
   refreshList();
  },function(e){
-  $("sent_txt").textContent="La notificación está lista, pero la TDE NO se guardó en la base: "+(e&&e.message?e.message:e);
+  $("sent_txt").textContent="La notificación está lista, pero la TDE NO se guardó: "+(e&&e.message?e.message:e);
  });
 };
 
 // ---- TDE GUARDADA ----
-var lastRecs=[];
 function gsay(t){$("gmsg").textContent=t}
 function refreshList(){
  return dbList().then(function(recs){
-  lastRecs=recs;
-  $("gcount").textContent=recs.length?(recs.length+(recs.length===1?" TDE guardada":" TDE guardadas")+" en la base del equipo"):"No hay TDE guardadas todavía.";
+  $("gcount").textContent=recs.length?(recs.length+(recs.length===1?" TDE guardada":" TDE guardadas")):"No hay TDE guardadas todavía.";
   var list=$("glist");list.innerHTML="";
   recs.forEach(function(r){
    var d=document.createElement("div");d.className="item";
@@ -506,14 +463,7 @@ $("gbtn").onclick=function(){
  var g=$("guard");g.hidden=!g.hidden;
  if(!g.hidden){refreshList();g.scrollIntoView({behavior:"smooth",block:"start"})}};
 
-// FULL DATA: ZIP con todas las TDE de la base y sus archivos
-function fileList(r){
- var a=r.archivos||{},out=[];
- if(a.logo)out.push(["logo/"+a.logo.nombre,a.logo.ruta]);
- if(a.foto)out.push(["foto/"+a.foto.nombre,a.foto.ruta]);
- (a.presentacion||[]).forEach(function(x){out.push(["presentacion/"+x.nombre,x.ruta])});
- (a.catalogo||[]).forEach(function(x){out.push(["catalogo/"+x.nombre,x.ruta])});
- return out}
+// FULL DATA: ZIP con todas las TDE guardadas y sus archivos
 $("fulld").onclick=function(){
  if(typeof JSZip==="undefined"){gsay("No se pudo cargar el generador de ZIP. Revisá la conexión y probá otra vez.");return}
  gsay("Preparando ZIP… puede tardar si hay muchos archivos.");
@@ -550,7 +500,7 @@ $("clr").onclick=function(){
  if(!clrTimer){
   $("clr").classList.add("armed");$("clr").textContent="TOCÁ OTRA VEZ PARA BORRAR";
   clrTimer=setTimeout(disarm,6000);
-  gsay(dirty?"Todavía no descargaste FULL DATA desde la última TDE guardada. Descargalo antes de limpiar.":"Se borrarán todas las TDE guardadas en la base del equipo.");
+  gsay(dirty?"Todavía no descargaste FULL DATA desde la última TDE guardada. Descargalo antes de limpiar.":"Se borrarán todas las TDE guardadas.");
   return}
  disarm();
  dbList().then(function(recs){
@@ -561,7 +511,7 @@ $("clr").onclick=function(){
  function(e){gsay("No se pudo limpiar: "+(e&&e.message?e.message:e))});
 };
 
-showApp();
+refreshList();
 </script>
 </body>
 </html>
