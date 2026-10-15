@@ -217,7 +217,7 @@ pre.ficha.open{display:block}
 <button type="button" id="fulld" class="btn">FULL DATA (ZIP)</button>
 <button type="button" id="clr" class="btn danger">LIMPIAR BD</button>
 </div>
-<p class="note">FULL DATA descarga en un ZIP todas las TDE guardadas, con sus archivos. Descargalo antes de LIMPIAR BD.</p>
+<p class="note">FULL DATA descarga en un ZIP todas las TDE guardadas, con sus archivos. LIMPIAR BD solo oculta las TDE de esta lista en este equipo; no borra nada de la base de datos.</p>
 <div id="gmsg" role="status"></div>
 </section>
 
@@ -392,7 +392,7 @@ function saveRecord(ficha){
  return ups.reduce(function(p,u){return p.then(function(){return uploadFile(u[0],u[1])})},Promise.resolve())
   .then(function(){return insertRow({id:id,fantasia:v("fantasia"),persona:v("persona"),plan:v("plan"),datos:collect(),ficha:ficha,archivos:arch})})
   .then(function(){return pruneOld(MAX_TDE)})
-  .then(function(){setDirty(true);return id})}
+  .then(function(){return id})}
 
 // Mantiene solo las MAX_TDE más nuevas: borra archivos y filas de las más viejas
 function pruneOld(keep){
@@ -447,9 +447,12 @@ $("go").onclick=function(){
 function gsay(t){$("gmsg").textContent=t}
 function refreshList(){
  return dbList().then(function(recs){
-  $("gcount").textContent=recs.length?(recs.length+(recs.length===1?" TDE guardada":" TDE guardadas")):"No hay TDE guardadas todavía.";
+  var cut=getCut(),cutT=cut?new Date(cut).getTime():0;
+  var vis=recs.filter(function(r){return !cut||new Date(r.creado_en).getTime()>cutT});
+  var n=vis.length;
+  $("gcount").textContent=!recs.length?"No hay TDE guardadas todavía.":!n?"Lista limpia en este equipo: hay "+recs.length+" TDE en la base (ocultas aquí).":(n+(n===1?" TDE guardada":" TDE guardadas"));
   var list=$("glist");list.innerHTML="";
-  recs.forEach(function(r){
+  vis.forEach(function(r){
    var d=document.createElement("div");d.className="item";
    var b=document.createElement("b");b.textContent=r.fantasia||r.persona||"Sin nombre";
    var s=document.createElement("small");s.textContent=new Date(r.creado_en).toLocaleString("es-AR")+" · Plan "+r.plan;
@@ -485,29 +488,28 @@ $("fulld").onclick=function(){
    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="TDE_DATOS_FULL_"+stamp+".zip";
    document.body.appendChild(a);a.click();
    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500);
-   setDirty(false);
    gsay("ZIP descargado con "+recs.length+(recs.length===1?" TDE.":" TDE."));
   });
  }).catch(function(e){gsay("No se pudo generar el ZIP: "+(e&&e.message?e.message:e))});
 };
 
 // LIMPIAR BD: dos toques para confirmar
-var clrTimer=0,dirty=false;
-try{dirty=localStorage.getItem("tde_dirty")==="1"}catch(e){}
-function setDirty(x){dirty=x;try{localStorage.setItem("tde_dirty",x?"1":"0")}catch(e){}}
+var clrTimer=0;
+function getCut(){try{return localStorage.getItem("tde_corte")||""}catch(e){return ""}}
+function setCut(v){try{localStorage.setItem("tde_corte",v)}catch(e){}}
 function disarm(){clearTimeout(clrTimer);clrTimer=0;$("clr").classList.remove("armed");$("clr").textContent="LIMPIAR BD"}
 $("clr").onclick=function(){
  if(!clrTimer){
   $("clr").classList.add("armed");$("clr").textContent="TOCÁ OTRA VEZ PARA BORRAR";
   clrTimer=setTimeout(disarm,6000);
-  gsay(dirty?"Todavía no descargaste FULL DATA desde la última TDE guardada. Descargalo antes de limpiar.":"Se borrarán todas las TDE guardadas.");
+  gsay("Se ocultarán las TDE de esta lista en este equipo. No se borra nada de la base de datos.");
   return}
  disarm();
  dbList().then(function(recs){
-  var paths=[];
-  recs.forEach(function(r){fileList(r).forEach(function(x){paths.push(x[1])})});
-  return removeFiles(paths).then(deleteRows);
- }).then(function(){setDirty(false);refreshList();gsay("Base limpia. La próxima TDE generada se guarda desde cero.")},
+  if(!recs.length){gsay("No hay TDE guardadas para ocultar.");return}
+  setCut(recs[0].creado_en);
+  return refreshList();
+ }).then(function(){gsay("Lista limpia en este equipo. Las TDE siguen en la base y FULL DATA las incluye todas.")},
  function(e){gsay("No se pudo limpiar: "+(e&&e.message?e.message:e))});
 };
 
